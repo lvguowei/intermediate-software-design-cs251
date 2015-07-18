@@ -1,0 +1,317 @@
+#+TITLE: Types of Iterators in C++
+#+AUTHOR: Guowei Lv
+#+OPTIONS: texht:t
+#+LATEX_CLASS: article
+#+LATEX_CLASS_OPTIONS:
+#+LaTeX_HEADER: \usemintedstyle{colorful}
+#+LATEX_HEADER_EXTRA:
+
+* Input Iterator
+The term /input/ is used from the viewpoint of a program. In other words, information going from the container to the program is considered input. So, an input iterator is one that a program can use to read values from a container. Dereferencing an input iterator allows us to read a value from a container, but it does not allow us to alter the value. So algorithms that require an input iterator are algorithms that don't modify values of the container elements.
+
+#+begin_src C++ :tangle input_iterator.cpp
+#include <iostream>
+#include <fstream>
+#include <numeric>
+#include <iterator>
+
+using namespace std;
+
+int main(int argc, char *argv[]) {
+  ifstream myInt("data");
+  istream_iterator<int> iter(myInt);
+  istream_iterator<int> eos;  // end of stream iterator
+
+  cout << "sum of the data is " << accumulate(iter, eos, 0) << endl;
+  return 0;
+}
+#+end_src
+
+#+begin_src C++ :tangle data
+1 2 3 4 5 6 7 8 9 10
+#+end_src
+
+* Output Iterator
+The term /output/ indicates that the iterator is used for moving information from a program to a container. An output iterator is similar to an input iterator, except that dereferencing is guaranteed to allow a program to modify a value of container element but not to read it.
+
+* Forward Iterator
+Forward iterators use only the ++ operators for navigating through a container. So a forward iterator can only go forward through a container one element at a time. Unlike input and output iterators, however, it necessarily goes through a sequence of values in the same order each time we use it.
+
+#+begin_src C++ :tangle forward_iterator.cpp
+#include <iostream>
+#include <fstream>
+#include <iterator>
+#include <vector>
+
+using std::cout;
+using std::endl;
+using std::vector;
+
+template<typename ForwardIterator>
+void square(ForwardIterator first, ForwardIterator last) {
+  cout << "Square: ";
+  for (; first != last; first++) {
+    *first = (*first) * (*first);
+    cout << *first << " ";
+  }
+  cout << endl;
+}
+
+int main(int argc, char *argv[]) {
+  vector<int> vec;
+  vec.push_back(1);
+  vec.push_back(2);
+  vec.push_back(3);
+  vec.push_back(4);
+
+  cout << "Elements: ";
+  for (auto it : vec) {
+    cout << it << " ";
+  }
+  cout << endl;
+
+  square(vec.begin(), vec.end());
+
+  for (auto it : vec) {
+    cout << it << " ";
+  }
+  cout << endl;
+
+  return 0;
+}
+#+end_src
+
+* Bidirectional Iterator
+
+A bidirectional iterator has all the features of a forward iterator and adds support for the two decrement operators (prefix and postfix).
+
+#+begin_src C++ :tangle bidirectional_iterator.cpp
+#include <iostream>
+#include <iterator>
+#include <string>
+
+using std::cout;
+using std::endl;
+using std::string;
+
+template<typename Bidirectional>
+bool isPalindrome(Bidirectional first, Bidirectional last) {
+  while (true) {
+    last--;
+
+    // when a char is a space, skip it
+    if (*last == ' ') last--;
+    if (*first == ' ') first++;
+    // two iters meets
+    if (first == last) break;
+
+    // case insensitive comparison
+    if (tolower(*first) != tolower(*last)) return false;
+
+    first++;
+
+    if (first == last) break;
+  }
+  return true;
+}
+
+int main(int argc, char *argv[]) {
+  string s[] {"Never odd or even", "reviver", "telmet"};
+  for (int i = 0; i < 4; ++i) {
+    cout << s[i] << isPalindrome(s[i].begin(), s[i].end()) << endl;
+  }
+  return 0;
+}
+#+end_src
+
+* Random Access Iterator
+
+Some of the algorithms such as sort() and binary search() require the ability to jump directly to an arbitrary element of a container.
+
+#+begin_src C++ :tangle random_access_iterator.cpp
+#include <iostream>
+#include <iterator>
+#include <vector>
+
+/* for ptrdiff_t */
+#include <cstddef>
+
+using std::cout;
+using std::vector;
+using std::endl;
+
+template<typename RandomIter>
+RandomIter getRandomElement(RandomIter first, RandomIter last) {
+  ptrdiff_t d = last - first;
+  return first + rand() % d;
+}
+
+
+int main(int argc, char *argv[]) {
+  vector<int> vec(10);
+  for (int i = 0; i < vec.size(); ++i) {
+    vec[i] = i;
+  }
+
+  for (int i = 0; i < 20; ++i) {
+    cout << *getRandomElement(vec.begin(), vec.end()) << " ";
+  }
+  cout << endl;
+  return 0;
+}
+#+end_src
+
+* Const Iterator
+
+A const_iterator is equivalent to pointer to a constant. Iterator itself can change its value but not the underlying element. Another type of iterator is an iterator itself is a constant. This is quite useless since it can iterate among the element of the container. On the contrary, normal iterator can do anything: it can change its underlying elements, it can iterate through the elements of the container by changing its value. Below is an example:
+
+#+begin_src C++ :tangle const_iterator.cpp
+#include <iostream>
+#include <vector>
+
+using std::cout;
+using std::endl;
+using std::vector;
+
+int main(int argc, char *argv[]) {
+  vector<int> v(10, 0);
+
+  // iterator
+  vector<int>::iterator it;
+  it = v.begin();
+  *it = 911;
+  it++;
+
+  // const_iterator
+  vector<int>::const_iterator cit;
+  cit = v.begin();
+  // *cit = 911; // Error: cannot assi gn to a variable that is const
+  cit++;
+
+  // iterator that is const
+  const vector<int>::iterator itc = v.begin();
+  // itc = v.begin(); // can't assign a new value
+  *itc = 911;
+  // itc++; // can't change value of itc
+  return 0;
+}
+#+end_src
+
+* Makefile
+
+#+begin_src makefile :tangle makefile
+all: build_msg input forward random const bidirectional
+
+input: input_iterator.cpp
+	g++ -std=c++11 $< -o input.o
+forward: forward_iterator.cpp
+	g++ -std=c++11 $< -o forward.o
+bidirectional: bidirectional_iterator.cpp
+	g++ -std=c++11 $< -o bidirectional.o
+random: random_access_iterator.cpp
+	g++ -std=c++11 $< -o random.o
+const: const_iterator.cpp
+	g++ -std=c++11 $< -o const.o
+clean:
+	rm -rf *.cpp *.o *.tex data makefile _minted-iterators
+
+.PHONY: build_msg
+build_msg:
+	@printf "#\n# Iterator classes in c++\n#\n"
+	@printf "# 1. input iterator\n"
+	@printf "# 2. output iterator(no file)\n"
+	@printf "# 3. forward iterator\n"
+	@printf "# 4. bidirectional_iterator\n"
+	@printf "# 5. random access iterator\n"
+	@printf "# 6. const iterator\n#\n"
+#+end_src
+  
+* How to run
+Press =C-c C-c= on the code block below.
+** Compile and Build
+
+#+BEGIN_SRC emacs-lisp :exports none
+;; tangle the source code
+(org-babel-tangle)
+;; export to pdf
+(org-latex-export-to-pdf)
+;; build
+(shell-command-to-string "make")
+#+END_SRC
+
+#+RESULTS:
+#+begin_example
+#
+# Iterator classes in c++
+#
+# 1. input iterator
+# 2. output iterator(no file)
+# 3. forward iterator
+# 4. bidirectional_iterator
+# 5. random access iterator
+# 6. const iterator
+#
+g++ -std=c++11 input_iterator.cpp -o input.o
+g++ -std=c++11 forward_iterator.cpp -o forward.o
+g++ -std=c++11 random_access_iterator.cpp -o random.o
+g++ -std=c++11 const_iterator.cpp -o const.o
+g++ -std=c++11 bidirectional_iterator.cpp -o bidirectional.o
+#+end_example
+
+** Run
+
+#+begin_src emacs-lisp :exports none
+(shell-command-to-string "./input.o")
+#+end_src
+
+#+RESULTS:
+: sum of the data is 55
+
+#+begin_src emacs-lisp :exports none
+(shell-command-to-string "./forward.o")
+#+end_src
+
+#+RESULTS:
+: Elements: 1 2 3 4 
+: Square: 1 4 9 16 
+: 1 4 9 16 
+
+#+begin_src emacs-lisp :exports none
+(shell-command-to-string "./bidirectional.o")
+#+end_src
+
+#+RESULTS:
+: Never odd or even1
+: reviver1
+: telmet0
+
+#+begin_src emacs-lisp :exports none
+(shell-command-to-string "./random.o")
+#+end_src
+
+#+RESULTS:
+: 3 6 7 5 3 5 6 2 9 1 2 7 0 9 3 6 0 6 2 6 
+
+#+begin_src emacs-lisp :exports none
+(shell-command-to-string "./forward.o")
+#+end_src
+
+#+RESULTS:
+: Elements: 1 2 3 4 
+: Square: 1 4 9 16 
+: 1 4 9 16 
+
+#+begin_src emacs-lisp :exports none
+(shell-command-to-string "./const.o")
+#+end_src
+
+#+RESULTS:
+
+** Clean
+#+begin_src emacs-lisp :exports none
+(shell-command-to-string "make clean")
+#+end_src
+
+#+RESULTS:
+: rm -rf *.cpp *.o *.tex data makefile minted-iterators
+
