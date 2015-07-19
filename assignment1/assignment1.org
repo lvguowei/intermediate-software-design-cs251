@@ -1,0 +1,388 @@
+#+TITLE: Assignment 1 Array
+#+AUTHOR: Guowei Lv
+
+* Header files
+
+#+begin_src C++ :tangle Array.h
+
+/**
+ * Copyright [2015] <Guowei Lv>
+ *
+ * (1) More info about Copy constructors, assignment operators and exception safe
+ *     assignment can be found here:
+ *     http://www.cplusplus.com/articles/y8hv0pDG/
+ */
+
+#ifndef CS251_ARRAY_H
+#define CS251_ARRAY_H
+
+// This header defines "size_t"
+#include <stdlib.h>
+
+// Generalize the type.
+typedef char T;
+
+class Array {
+ public:
+    /** Initialization and termination methods */
+
+    // Define a "trait"
+    typedef T value_type;
+
+    // Dynamically create an uninitialized array.
+    // The keyword "explicit" prevents this constructor being
+    // used for implicit conversions
+    explicit Array(size_t size);
+
+    // Dynamically initialize an array.
+    Array(size_t size, const T &default_value);
+
+    // The copy constructor (performs the initialization)
+    Array(const Array &s);
+
+    /**
+     * Assignment operator performs an assignment by making a copy of
+     * the contents of parameter <s>. Note that if the <max_size> of <array_>
+     * is >= <s.cur_size>, we can copy it without reallocating. However, if <max_size>
+     * < <s.cur_size> we must delete the <array_>, reallocate a new <array_> and then
+     * copy the contents of <s>.
+     */
+    Array &operator=(const Array &s);
+
+    // Clean up the array (e.g. delete dynamically allocated memory)
+    ~Array(void);
+
+    /** Set/Get methods */
+
+    // Set an item in the array at location index. Returns -1 if
+    // index is larger than the size() of the array, else 0.
+    int set(const T &new_item, size_t index);
+
+    // Get an item in the array at location index. Returns -1 if index is larger
+    // than the size() of the array, else 0.
+    int get(T &item, size_t index) const;
+
+    // Returns a reference to the <index> element
+    // in the <Array> without checking for range errors.
+    const T &operator[](size_t index) const;
+
+    // Set an item in the array at location
+    // index without checking for range errors
+    T &operator[](size_t index);
+
+    // Returns the current size of the array
+    size_t size(void) const;
+
+    /**
+     * Compares this array with <s> for equality. Returns true if the size()'s of the two arrays
+     * are equal and all the elements from 0..size() are equal, else false.
+     */
+    bool operator==(const Array &s) const;
+
+    /**
+     * Compares this array with <s> for inequality.
+     */
+    bool operator!=(const Array &s) const;
+
+ private:
+    // Returns true if <index> is within range, else false.
+    bool in_range(size_t index) const;
+
+    // Add other helper functions you see fit here ...
+
+    // Maximum size of the array.
+    size_t max_size_;
+
+    // Current size of the array. This starts out being == to <max_size>
+    // However, if we are assigned a smaller array, then <cur_size_>
+    // will become less than <max_size>.
+    // The purpose of keeping track of both sizes
+    // is to avoid reallocating memory if we don't have to.
+    size_t cur_size_;
+
+    // Pointer to the array's storage buffer.
+    T *array_;
+};
+
+#if defined(__INLINE__)
+#define INLINE inline
+#include "Array.inl"
+#endif /* __INLINE__ */
+#endif //CS251_ARRAY_H
+
+#+end_src
+
+#+begin_src C++ :tangle Array.inl
+// Check if the index is in range.
+
+INLINE bool Array::in_range(size_t index) const {
+    return index < cur_size_;
+}
+
+// Returns the length of the array.
+INLINE size_t Array::size(void) const {
+    return cur_size_;
+}
+
+// Returns a reference to the <index> element in the <Array> without checking for range errors.
+INLINE const T &Array::operator[] (size_t index) const {
+    return array_[index];
+}
+
+// Sets an item in the array at location index without checking for range errors.
+INLINE T &Array::operator[] (size_t index) {
+    return array_[index];
+}
+#+end_src
+
+* Implementation
+
+#+begin_src C++ :tangle Array.cpp
+/**
+ * Copyright [2015] Guowei Lv
+ */
+
+#ifndef ARRAY_C
+#define ARRAY_C
+
+#include "Array.h"
+
+#if !defined (__INLINE__)
+#define INLINE
+
+#include "Array.inl"
+
+#endif /* __INLINE__ */
+
+Array::Array(size_t size)
+        : max_size_(size), cur_size_(size), array_(new T[size]) {
+}
+
+// Dynamically initialize an array
+Array::Array(size_t size, const T &default_value)
+        : max_size_(size), cur_size_(size), array_(new T[size]) {
+    for (size_t i = 0; i < size; ++i) {
+        array_[i] = default_value;
+    }
+}
+
+// The copy constructor
+Array::Array(const Array &s)
+        : max_size_(s.size()), cur_size_(s.size()), array_(new T[s.size()]) {
+    for (size_t i = 0; i < s.size(); ++i) {
+        array_[i] = s[i];
+    }
+}
+
+// Compare this array with <s> for equality
+bool Array::operator==(const Array &s) const {
+    if (s.size() != cur_size_) {
+        return false;
+    } else {
+        for (size_t i = 0; i < cur_size_; ++i) {
+            if (array_[i] != s[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
+
+// Compare this array with <s> for inequality.
+bool Array::operator!=(const Array &s) const {
+    if (s.size() != cur_size_) {
+        return true;
+    } else {
+        for (size_t i = 0; i < cur_size_; ++i) {
+            if (array_[i] != s[i]) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+// Assignment operator (performs assignment)
+Array &Array::operator=(const Array &s) {
+    if (this != &s) {
+        // Allocate new memory and copy the elements
+        if (s.size() > max_size_) {
+            T *tmp = new T[s.size()];
+            delete [] array_;
+            array_ = nullptr;
+            for (size_t i = 0; i < s.size(); ++i) {
+                tmp[i] = s[i];
+            }
+            cur_size_ = s.size();
+            max_size_ = s.size();
+            array_ = tmp;
+        } else {
+            for (size_t i = 0; i < s.size(); ++i) {
+                array_[i] = s[i];
+            }
+            cur_size_ = s.size();
+        }
+    }
+}
+
+// Clean up the array (e.g. delete dynamically allocated memory)
+Array::~Array() {
+    delete [] array_;
+}
+
+// = Set/Get methods
+
+// Set an item in the array at location index.
+// Returns -1 if index is larger than the size() of the array, else 0.
+int Array::set(const T &new_item, size_t index) {
+    if (index >= cur_size_) {
+        return -1;
+    } else {
+        array_[index] = new_item;
+        return 0;
+    }
+}
+
+// Get an item in the array at location index.
+// Returns -1 if index is larger than the size() of the array, else 0.
+int Array::get(T &item, size_t index) const {
+    if (index >= cur_size_) {
+        return -1;
+    } else {
+        item = array_[index];
+        return 0;
+    }
+}
+
+#endif /* ARRAY_C */
+
+#+end_src
+
+* Test
+
+#+begin_src C++ :tangle main.cpp
+/**
+ * Copyright [2015] <Guowei Lv>
+ * Uses a Array to reverse a name and test various properties of class Array<>.
+ */
+
+#include <assert.h>
+#include <iostream>
+#include <string>
+#include "Array.h"
+
+static const int INITIAL_NAME_LEN = 80;
+
+typedef Array ARRAY;
+
+int main(int argc, char *argv[]) {
+    ARRAY a1(INITIAL_NAME_LEN, ' ');
+    size_t i;
+    std::string name;
+    assert (a1.size() == INITIAL_NAME_LEN);
+
+    std::cout << "please enter your name..: ";
+    std::getline(std::cin, name);
+
+    std::cout << "read in: " << name.length() << std::endl;
+
+    for (i = 0; i < name.length(); i++)
+        if (a1.set(name[i], i) == -1) {
+            std::cout.flush();
+            std::cerr << std::endl << "index out of range" << std::endl;
+            return 1;
+        }
+
+    std::cout << "size is " << a1.size() << std::endl << "your name is..: ";
+
+    for (i = 0; i < a1.size(); i++)
+        std::cout << a1[i];
+
+    std::cout << std::endl;
+
+    // Test initialization with the copy constructor.
+    ARRAY a2(a1);
+    ARRAY a3(a1.size() + a2.size(), -1);
+
+    // Test the assignment operator.
+    a1 = a2;
+    assert (a1.size() == a2.size());
+    assert (a1 == a2);
+    assert (!(a1 != a2));
+
+    a2 = a3;
+    assert (a1.size() != a2.size());
+    assert (a1 != a2);
+
+    // Test the operator[] for setting and getting.
+    a2[0] = 'c';
+    assert (a2[0] == 'c');
+
+    // Test for self assignment.
+    a3 = a3;
+    std::cout << "your name backwards is..: ";
+
+    // Note that we're "off by one here" so we'll get a range error.
+    for (int j = name.length(); j >= 0; j--) {
+        ARRAY::value_type c;
+
+        if (a1.get(c, j - 1) == -1) {
+            std::cout.flush();
+            std::cerr << std::endl << "index out of range" << std::endl;
+            return 1;
+        }
+        std::cout << c;
+    }
+    std::cout << "\n";
+    return 0;
+}
+
+#+end_src
+
+* Makefile
+#+begin_src CMakeLists :tangle CMakeLists.txt
+cmake_minimum_required(VERSION 3.1)
+project(cs251)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(SOURCE_FILES main.cpp)
+add_executable(cs251 ${SOURCE_FILES} Array.h Array.cpp)
+#+end_src
+
+* How to run
+** Compile and Build
+Extract all the source code into files and compile and build the executable.
+#+BEGIN_SRC emacs-lisp :exports none
+;; tangle the source code
+(org-babel-tangle)
+;; export to pdf
+(org-latex-export-to-pdf)
+;; build
+(shell-command-to-string "cmake CMakeLists.txt")
+(shell-command-to-string "make")
+#+END_SRC
+
+#+RESULTS:
+: Scanning dependencies of target cs251
+: [ 50%] Building CXX object CMakeFiles/cs251.dir/main.cpp.o
+: [100%] Building CXX object CMakeFiles/cs251.dir/Array.cpp.o
+: Linking CXX executable cs251
+: [100%] Built target cs251
+
+** Run
+Run the project.
+#+begin_src emacs-lisp :exports none
+(shell-command-to-string "./cs251")
+#+end_src
+
+#+RESULTS:
+: zsh:1: no such file or directory: ./cs251
+
+** Clean
+Keeps only the org file.
+#+begin_src emacs-lisp :exports none
+(shell-command-to-string "make clean")
+(shell-command-to-string "rm -fr *.cpp *.h *.inl *.tex *.pdf *.txt *.cmake _minted-assignment1 CMakeFiles Makefile")
+#+end_src
+
+#+RESULTS:
+
