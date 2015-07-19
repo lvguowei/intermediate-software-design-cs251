@@ -1,5 +1,7 @@
 #+TITLE: Assignment 1 Array
 #+AUTHOR: Guowei Lv
+#+LATEX_CLASS: article
+#+LaTeX_HEADER: \usemintedstyle{emacs}
 
 * Header files
 
@@ -42,9 +44,10 @@ class Array {
 
     /**
      * Assignment operator performs an assignment by making a copy of
-     * the contents of parameter <s>. Note that if the <max_size> of <array_>
-     * is >= <s.cur_size>, we can copy it without reallocating. However, if <max_size>
-     * < <s.cur_size> we must delete the <array_>, reallocate a new <array_> and then
+     * the contents of parameter <s>.
+     * Note that if the <max_size> of <array_> is >= <s.cur_size>, we can copy it
+     * without reallocating. However, if <max_size> < <s.cur_size> we must delete
+     * the <array_>, reallocate a new <array_> and then
      * copy the contents of <s>.
      */
     Array &operator=(const Array &s);
@@ -74,7 +77,8 @@ class Array {
     size_t size(void) const;
 
     /**
-     * Compares this array with <s> for equality. Returns true if the size()'s of the two arrays
+     * Compares this array with <s> for equality.
+     * Returns true if the size()'s of the two arrays
      * are equal and all the elements from 0..size() are equal, else false.
      */
     bool operator==(const Array &s) const;
@@ -93,11 +97,13 @@ class Array {
     // Maximum size of the array.
     size_t max_size_;
 
-    // Current size of the array. This starts out being == to <max_size>
-    // However, if we are assigned a smaller array, then <cur_size_>
-    // will become less than <max_size>.
-    // The purpose of keeping track of both sizes
-    // is to avoid reallocating memory if we don't have to.
+    /**
+     * Current size of the array. This starts out being == to <max_size>
+     * However, if we are assigned a smaller array, then <cur_size_>
+     * will become less than <max_size>.
+     * The purpose of keeping track of both sizes
+     * is to avoid reallocating memory if we don't have to.
+     */
     size_t cur_size_;
 
     // Pointer to the array's storage buffer.
@@ -340,12 +346,16 @@ int main(int argc, char *argv[]) {
 #+end_src
 
 * Makefile
-#+begin_src CMakeLists :tangle CMakeLists.txt
-cmake_minimum_required(VERSION 3.1)
-project(cs251)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-set(SOURCE_FILES main.cpp)
-add_executable(cs251 ${SOURCE_FILES} Array.h Array.cpp)
+#+begin_src makefile :tangle makefile
+all: Array.o main.o
+
+main.o: Array.o main.cpp
+	g++ -std=c++11 main.cpp Array.o -o main.o
+
+Array.o: Array.h Array.inl Array.cpp
+	g++ -c -std=c++11 Array.cpp -o Array.o
+clean:
+	rm -rf *.o *.tex *.cpp *.h *.inl makefile _minted-assignment1
 #+end_src
 
 * How to run
@@ -357,32 +367,25 @@ Extract all the source code into files and compile and build the executable.
 ;; export to pdf
 (org-latex-export-to-pdf)
 ;; build
-(shell-command-to-string "cmake CMakeLists.txt")
 (shell-command-to-string "make")
 #+END_SRC
 
 #+RESULTS:
-: Scanning dependencies of target cs251
-: [ 50%] Building CXX object CMakeFiles/cs251.dir/main.cpp.o
-: [100%] Building CXX object CMakeFiles/cs251.dir/Array.cpp.o
-: Linking CXX executable cs251
-: [100%] Built target cs251
+: g++ -c -std=c++11 Array.cpp -o Array.o
+: g++ -std=c++11 main.cpp Array.o -o main.o
 
 ** Run
 Run the project.
 #+begin_src emacs-lisp :exports none
-(shell-command-to-string "./cs251")
+(shell-command-to-string "./main.o")
 #+end_src
-
-#+RESULTS:
-: zsh:1: no such file or directory: ./cs251
 
 ** Clean
 Keeps only the org file.
 #+begin_src emacs-lisp :exports none
 (shell-command-to-string "make clean")
-(shell-command-to-string "rm -fr *.cpp *.h *.inl *.tex *.pdf *.txt *.cmake _minted-assignment1 CMakeFiles Makefile")
 #+end_src
 
 #+RESULTS:
+: rm -rf *.o *.tex *.cpp *.h *.inl makefile _minted-assignment1
 
